@@ -1,0 +1,37 @@
+# SIAC Scrapping Configuration File
+
+base_url: "https://alunoweb.ufba.br/SiacWWW/"
+login_url: "https://alunoweb.ufba.br/SiacWWW/Welcome.do"
+completed_courses_url: "https://alunoweb.ufba.br/SiacWWW/ConsultarCoeficienteRendimento.do"
+pdf_download_path: "downloads/completed_courses.pdf"
+
+webdriver:
+  driver_path: "drivers/chromedriver"
+  headless: true    # Set true for headless browser execution
+
+timeout:
+  page_load: 20      # Max time (seconds) to wait for page to load
+  element: 10        # Max time (seconds) to wait for an element to appear
+
+log:
+  dir: "logs/logs"
+  general_log_file: "general_log"
+  return_log_file: "return_log"
+  log_file_extension: ".log"
+
+notion:
+  window_title: "Notion - Auth - v1.0.0-beta1"
+  token: ""
+  main_database_id: ""
+  timeline_database_id: ""
+  rr_database_id: ""
+  url: "https://api.notion.com/v1"
+  button_text: "Authenticate"
+  window_size:
+    - 350
+    - 250
+  config_fields:
+    - "Notion Token"
+    - "Main Database ID"
+    - "Timeline Database ID"
+    - "Rejection Database ID"
