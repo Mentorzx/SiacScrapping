@@ -1,5 +1,5 @@
 import os
-from tkinter import messagebox
+from tkinter import Tk, messagebox
 
 import yaml
 
@@ -20,11 +20,10 @@ class NotionLoginWindow(GenericWindow):
         super().__init__(
             title=config["notion"]["window_title"],
             fields=config["notion"]["config_fields"],
-            button_text=config["notion"]["button_text"],
-            button_action=self._login,
-            width=config["notion"]["window_size"][0],
-            height=config["notion"]["window_size"][1],
+            button_texts=[config["notion"]["button_text"]],
+            button_actions=[self._login],
         )
+        self.window.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _login(self):
         """
@@ -113,9 +112,11 @@ class NotionLoginWindow(GenericWindow):
         """
         with open(file_path, "w") as config_file:
             yaml.dump(data, config_file, default_flow_style=False)
-            
-    def run(self):
+
+    def _on_close(self):
         """
-        Start the Tkinter main loop.
+        Handle the window close event. Terminate the program.
         """
-        self.window.mainloop()
+        self.window.destroy()
+        Tk().destroy()
+        exit()
