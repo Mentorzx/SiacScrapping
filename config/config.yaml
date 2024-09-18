@@ -1,7 +1,11 @@
 # SIAC Scrapping Configuration File
 
+siac:
+  login:
+  password:
+  login_url: "https://alunoweb.ufba.br/SiacWWW/Welcome.do"
+
 base_url: "https://alunoweb.ufba.br/SiacWWW/"
-login_url: "https://alunoweb.ufba.br/SiacWWW/Welcome.do"
 completed_courses_url: "https://alunoweb.ufba.br/SiacWWW/ConsultarCoeficienteRendimento.do"
 pdf_download_path: "downloads/completed_courses.pdf"
 
@@ -27,9 +31,6 @@ notion:
   rr_database_id: ""
   url: "https://api.notion.com/v1"
   button_text: "Authenticate"
-  window_size:
-    - 350
-    - 250
   config_fields:
     - "Notion Token"
     - "Main Database ID"

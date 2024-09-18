@@ -1,4 +1,1 @@
-2024-09-17 15:31:12,221 - INFO - Notion credentials are missing. Displaying login window.
-2024-09-17 15:31:14,029 - INFO - Starting the SIAC Scraping application.
-2024-09-17 15:31:14,895 - ERROR - Failed to initialize the WebDriver.
-2024-09-17 15:31:14,895 - CRITICAL - Application terminated due to: WebDriver initialization failed.
+2024-09-18 00:30:28,612 - INFO - Starting the SIAC Scraping application.
