@@ -29,8 +29,7 @@ class Logger:
         self.GENERAL_LOG_FILE = config["log"]["general_log_file"]
         self.RETURN_LOG_FILE = config["log"]["return_log_file"]
         self.logger = self._setup_logger()
-        
-    
+
     def _setup_logger(self) -> logging.Logger:
         """
         Set up the logger with specified log type.

@@ -111,13 +111,11 @@ def update_timeline_notion(
         notion_factory (NotionRequestFactory): Instance of NotionRequestFactory used to interact with Notion API.
     """
     general_log.logger.info("Starting update for timeline Notion table.")
-    df_cleaned = df[df['CÓDIGO'].str.strip() != ''].copy()
+    df_cleaned = df[df["CÓDIGO"].str.strip() != ""].copy()
     grouped_by_period = df_cleaned.groupby("PERÍODO")
-    semester = 1
-    for period, group in grouped_by_period:
+    for semester, (period, group) in enumerate(grouped_by_period, start=1):
         general_log.logger.info(f"Processing period {period}.")
         process_period(period, group, semester, page_code_map, notion_factory)
-        semester += 1
     general_log.logger.info("Finished processing all periods.")
 
 
@@ -144,11 +142,10 @@ def create_new_period_page(
     response = notion_factory.create_page(period_data)
     if response.status_code == 200:
         return response.json().get("id")
-    else:
-        general_log.logger.error(
-            f"Failed to create page for period '{period}'. Status code: {response.status_code}"
-        )
-        return None
+    general_log.logger.error(
+        f"Failed to create page for period '{period}'. Status code: {response.status_code}"
+    )
+    return None
 
 
 def process_period(
@@ -174,8 +171,7 @@ def process_period(
         period_page_id = handle_missing_period_page(
             period, semester, notion_factory, page_code_map
         )
-        if not period_page_id:
-            return  # Skip further processing if page creation failed
+        return
     period_page_id = ensure_page_ids_is_list(period_page_id)[0]
     for _, row in group.iterrows():
         process_row(row, period_page_id, page_code_map, notion_factory)
@@ -345,9 +341,7 @@ def ensure_page_ids_is_list(page_ids: Union[str, list[str]]) -> list[str]:
     Returns:
         list: A list of page IDs.
     """
-    if not isinstance(page_ids, list):
-        return [page_ids]
-    return page_ids
+    return page_ids if isinstance(page_ids, list) else [page_ids]
 
 
 def update_pages_with_rows(

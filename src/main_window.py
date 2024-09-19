@@ -166,7 +166,11 @@ class MainWindow(GenericWindow):
                 if self._has_empty_fields(notion_data["notion_login"])
                 else None
             ),
-            "CPF and Password cannot be empty. Auth only work with them." if not cpf or not password else None,
+            (
+                "CPF and Password cannot be empty. Auth only work with them."
+                if not cpf or not password
+                else None
+            ),
         ]
         if errors := [error for error in errors if error]:
             messagebox.showerror("Error", "\n".join(errors))

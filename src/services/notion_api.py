@@ -96,10 +96,12 @@ class NotionRequestFactory:
             query_url, json=payload, headers=self.notion_adapter.get_headers()
         )
         # TODO handle timeout error
-        if response.status_code == 504:
-            pass 
-        return_log.logger.info(f"Response from Notion API: {response.status_code} - {response.text}")
-        
+        # if response.status_code == 504:
+        #     pass
+        return_log.logger.info(
+            f"Response from Notion API: {response.status_code} - {response.text}"
+        )
+
         data = response.json()
         return_log.logger.info(f"Initial response data: {data}")
         results = data.get("results", [])
@@ -141,7 +143,7 @@ class NotionRequestFactory:
             f"Response from Notion API: {response.status_code} - {response.text}"
         )
         return response
-    
+
     def get_type(self) -> str:
         return self.type
 

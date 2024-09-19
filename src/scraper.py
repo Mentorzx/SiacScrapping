@@ -35,9 +35,7 @@ class TableDataFilter:
             for pattern, length in unwanted_patterns:
                 if len(row) == length and row[0] == pattern:
                     return True
-            if len(row) == 2 and row[0].startswith("CH - Carga Horária"):
-                return True
-            return False
+            return bool(len(row) == 2 and row[0].startswith("CH - Carga Horária"))
 
         filtered_data = [row for row in data if not is_unwanted_row(row)]
         return_log.logger.info(f"Data filtered as: {filtered_data}")
@@ -72,7 +70,7 @@ class Scraper:
 
         try:
             table_data = self._extract_table_data()
-            general_log.logger.info(f"Extracted table data")
+            general_log.logger.info("Extracted table data")
             if len(table_data) > 8:
                 df = self._convert_table_to_dataframe(table_data)
                 df = self._calculate_weighted_average(df)
@@ -115,17 +113,31 @@ class Scraper:
 
         df["PERÍODO"] = df["PERÍODO"].replace("", None)
         df["PERÍODO"] = df["PERÍODO"].ffill()
-        df["NOTA"] = df["NOTA"].replace("--", None)
-        df["NOTA"] = pd.to_numeric(df["NOTA"], errors="coerce")
-        df["NOTA"] = df["NOTA"].replace(np.nan, None)
-        df["CH"] = df["CH"].replace("--", None)
-        df["CH"] = pd.to_numeric(df["CH"], errors="coerce")
-        df["CH"] = df["CH"].replace(np.nan, None)
-
+        self._clean_and_convert_column_to_numeric(df, "NOTA")
+        self._clean_and_convert_column_to_numeric(df, "CH")
         return_log.logger.info(f"DataFrame created with shape: {df.shape}")
         general_log.logger.info("Table data successfully converted to DataFrame.")
 
-        return df.dropna(subset=['CÓDIGO'])
+        return df.dropna(subset=["CÓDIGO"])
+
+    def _clean_and_convert_column_to_numeric(self, df, arg1):
+        """
+        Replace placeholder values in a specified column of a DataFrame and convert it to numeric.
+
+        This function modifies the given DataFrame by replacing placeholder values with None,
+        converting the specified column to a numeric type, and ensuring that any NaN values
+        are also replaced with None. This is useful for cleaning data before analysis.
+
+        Args:
+            df: The DataFrame to be modified.
+            arg1: The name of the column in the DataFrame to process.
+
+        Returns:
+            None
+        """
+        df[arg1] = df[arg1].replace("--", None)
+        df[arg1] = pd.to_numeric(df[arg1], errors="coerce")
+        df[arg1] = df[arg1].replace(np.nan, None)
 
     def _calculate_weighted_average(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -199,9 +211,7 @@ class Scraper:
             df.loc[(df["CÓDIGO"] == target_code) & (df["RES"] == "DI"), "NOTA"] = (
                 weighted_avg
             )
-            df.loc[(df["CÓDIGO"] == target_code) & (df["RES"] == "DI"), "CH"] = (
-                total_ch
-            )
+            df.loc[(df["CÓDIGO"] == target_code) & (df["RES"] == "DI"), "CH"] = total_ch
             df.loc[(df["CÓDIGO"] == target_code) & (df["RES"] == "DI"), "RES"] = (
                 "AP" if weighted_avg >= 5 else "RR"
             )
