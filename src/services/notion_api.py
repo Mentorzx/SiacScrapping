@@ -12,7 +12,7 @@ class NotionAdapter:
         general_log.logger.info(
             "Initializing NotionAdapter with provided configuration."
         )
-        self.token = config["notion"]["token"]
+        self.token = config["notion_login"]["token"]
         self.url = config["notion"]["url"]
 
     def get_headers(self) -> Dict[str, str]:
@@ -95,8 +95,9 @@ class NotionRequestFactory:
         response = requests.post(
             query_url, json=payload, headers=self.notion_adapter.get_headers()
         )
+        # TODO handle timeout error
         if response.status_code == 504:
-            pass # TODO handle timeout error
+            pass 
         return_log.logger.info(f"Response from Notion API: {response.status_code} - {response.text}")
         
         data = response.json()

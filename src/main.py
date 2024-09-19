@@ -7,37 +7,12 @@ import pandas as pd
 sys.path.append("../../")
 os.chdir(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from login_window import LoginWindow
-from logs import general_log, return_log
+from main_window import MainWindow
 from notion_update import update_notion
-from notion_window import NotionLoginWindow
 from scraper import Scraper
 from services.notion_api import NotionRequestFactory
+from logs import general_log, return_log
 from config import config
-
-
-def check_notion_credentials():
-    """
-    Check if the Notion token and database ID are set in the configuration file.
-    If they are not set, prompt the user to enter them.
-    """
-    missing_credentials = []
-    mapping = {
-        "Main Database ID": "main_database_id",
-        "Timeline Database ID": "timeline_database_id",
-        "Rejection Database ID": "rr_database_id",
-        "Notion Token": "token",
-    }
-    for field in config["notion"]["config_fields"]:
-        field_key = mapping.get(field, "").lower()
-        if not config["notion"].get(field_key, "").strip():
-            missing_credentials.append(field)
-    if missing_credentials:
-        general_log.logger.info(
-            "Notion credentials are missing. Displaying login window."
-        )
-        NotionLoginWindow().run()
-        
 
 
 def initialize_application() -> Scraper:
@@ -48,7 +23,7 @@ def initialize_application() -> Scraper:
         Scraper: An instance of the Scraper class with an initialized WebDriver.
     """
     general_log.logger.info("Starting the SIAC Scraping application.")
-    login_window = LoginWindow()
+    login_window = MainWindow()
     login_window.run()
     driver = login_window.get_driver()
     if driver is None:
@@ -100,7 +75,6 @@ def get_page_id_from_code(df, notion_factory: NotionRequestFactory) -> dict:
     try:
         pages = notion_factory.get_pages()
         for page in pages:
-            page_id = page["id"]
             props = page["properties"]
             if props["CÓDIGO"]["title"]:
                 notion_code = props["CÓDIGO"]["title"][0]["text"]["content"]
@@ -111,6 +85,7 @@ def get_page_id_from_code(df, notion_factory: NotionRequestFactory) -> dict:
             if not matching_row.empty:
                 if notion_code not in page_code_map:
                     page_code_map[notion_code] = []
+                page_id = page["id"]
                 page_code_map[notion_code].append(page_id)
                 general_log.logger.info(
                     f"Matched Notion page with code: {notion_code}, page_id: {page_id}"
@@ -130,10 +105,10 @@ def create_notion_factories() -> dict[str, NotionRequestFactory]:
         dict[str, NotionRequestFactory]: A dictionary with NotionRequestFactory instances for each database type.
     """
     return {
-        "main": NotionRequestFactory(config, config["notion"]["main_database_id"]),
-        "rr": NotionRequestFactory(config, config["notion"]["rr_database_id"], "rr"),
+        "main": NotionRequestFactory(config, config["notion_login"]["main_db_id"]),
+        "rr": NotionRequestFactory(config, config["notion_login"]["rr_db_id"], "rr"),
         "timeline": NotionRequestFactory(
-            config, config["notion"]["timeline_database_id"], "timeline"
+            config, config["notion_login"]["timeline_db_id"], "timeline"
         ),
     }
 
@@ -172,8 +147,7 @@ def update_all_notion_tables(
         notion_factories (dict[str, NotionRequestFactory]): A dictionary with NotionRequestFactory instances.
     """
     for table_type, page_code_map in page_code_maps.items():
-        notion_factory = notion_factories[table_type]
-        if notion_factory:
+        if notion_factory := notion_factories[table_type]:
             update_notion(df, page_code_map, notion_factory, table_type)
 
 
@@ -183,7 +157,6 @@ def main():
     Initializes the application, performs scraping, and updates Notion databases.
     """
     try:
-        check_notion_credentials()
         scraper = initialize_application()
         data_frame = execute_scraping(scraper)
         if data_frame.empty:
