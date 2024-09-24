@@ -19,14 +19,12 @@ def update_notion(
         df (DataFrame): The DataFrame containing the data to update.
         page_code_map (dict): A dictionary mapping codes to Notion page IDs or lists of page IDs.
         notion_factory (NotionRequestFactory): An instance of the NotionRequestFactory.
-        table_type (str): The type of table to update ("main", "rr", "timeline").
+        table_type (str): The type of table to update ("main", "rr").
     """
     if table_type == "main":
         update_main_notion(df, page_code_map, notion_factory)
     elif table_type == "rr":
         update_rr_notion(df, page_code_map, notion_factory)
-    elif table_type == "timeline":
-        update_timeline_notion(df, page_code_map, notion_factory)
     else:
         general_log.logger.error(
             f"Unknown table type: {table_type}. No update performed."
@@ -96,116 +94,6 @@ def update_rr_notion(
     general_log.logger.info("Finished processing all codes.")
 
 
-def update_timeline_notion(
-    df: pd.DataFrame,
-    page_code_map: dict[str, Union[str, list[str]]],
-    notion_factory: NotionRequestFactory,
-):
-    """
-    Updates Notion pages for the timeline table by processing each period in the given DataFrame.
-    For each period, the function creates or updates pages in Notion based on the provided mapping and factory.
-
-    Args:
-        df (pd.DataFrame): DataFrame containing data with columns 'PERÍODO', 'CÓDIGO', 'MATÉRIA', 'CH', and 'NOTA'.
-        page_code_map (dict[str, Union[str, list[str]]]): Dictionary mapping periods to Notion page IDs or lists of page IDs.
-        notion_factory (NotionRequestFactory): Instance of NotionRequestFactory used to interact with Notion API.
-    """
-    general_log.logger.info("Starting update for timeline Notion table.")
-    df_cleaned = df[df["CÓDIGO"].str.strip() != ""].copy()
-    grouped_by_period = df_cleaned.groupby("PERÍODO")
-    for semester, (period, group) in enumerate(grouped_by_period, start=1):
-        general_log.logger.info(f"Processing period {period}.")
-        process_period(period, group, semester, page_code_map, notion_factory)
-    general_log.logger.info("Finished processing all periods.")
-
-
-def create_new_period_page(
-    period: str, semester: int, notion_factory: NotionRequestFactory
-) -> str:
-    """
-    Creates a new page for the specified period and returns the page ID if successful.
-
-    Parameters:
-        period (str): The period name.
-        semester (int): The current semester number.
-        notion_factory (NotionRequestFactory): An instance of the NotionRequestFactory.
-
-    Returns:
-        Optional[str]: The newly created page ID, or None if creation failed.
-    """
-    period_data = {
-        "PERÍODO": {"rich_text": [{"text": {"content": period}}]},
-        "CÓDIGO": {"title": [{"text": {"content": f"{semester}°"}}]},
-        "MATÉRIA": {"rich_text": [{"text": {"content": "SEMESTRE"}}]},
-    }
-
-    response = notion_factory.create_page(period_data)
-    if response.status_code == 200:
-        return response.json().get("id")
-    general_log.logger.error(
-        f"Failed to create page for period '{period}'. Status code: {response.status_code}"
-    )
-    return None
-
-
-def process_period(
-    period: str,
-    group: pd.DataFrame,
-    semester: int,
-    page_code_map: dict[str, Union[str, list[str]]],
-    notion_factory: NotionRequestFactory,
-):
-    """
-    Handles the creation or update of Notion pages for a given period. If a page for the period does not exist,
-    it creates a new page and updates the mapping accordingly.
-
-    Args:
-        period (str): The period to process.
-        group (pd.DataFrame): DataFrame containing rows for the given period.
-        semester (int): The semester number associated with the period.
-        page_code_map (dict[str, Union[str, list[str]]]): Dictionary mapping periods to Notion page IDs or lists of page IDs.
-        notion_factory (NotionRequestFactory): Instance of NotionRequestFactory used to interact with Notion API.
-    """
-    period_page_id = page_code_map.get(period)
-    if not period_page_id:
-        period_page_id = handle_missing_period_page(
-            period, semester, notion_factory, page_code_map
-        )
-        return
-    period_page_id = ensure_page_ids_is_list(period_page_id)[0]
-    for _, row in group.iterrows():
-        process_row(row, period_page_id, page_code_map, notion_factory)
-
-
-def handle_missing_period_page(
-    period: str,
-    semester: int,
-    notion_factory: NotionRequestFactory,
-    page_code_map: dict[str, Union[str, list[str]]],
-):
-    """
-    Handles the situation where a Notion page for a given period does not exist. Creates a new page and updates
-    the page_code_map with the new page ID.
-
-    Args:
-        period (str): The period for which a new page needs to be created.
-        semester (int): The semester number associated with the period.
-        notion_factory (NotionRequestFactory): Instance of NotionRequestFactory used to interact with Notion API.
-        page_code_map (dict[str, Union[str, list[str]]]): Dictionary mapping periods to Notion page IDs or lists of page IDs.
-
-    Returns:
-        str: The page ID of the newly created Notion page, or None if creation failed.
-    """
-    general_log.logger.info(f"Period page for '{period}' not found. Creating new page.")
-    period_page_id = create_new_period_page(period, semester, notion_factory)
-    if period_page_id:
-        page_code_map[period] = period_page_id
-        general_log.logger.info(
-            f"Created new page for period '{period}' with page_id: {period_page_id}."
-        )
-    return period_page_id
-
-
 def process_row(
     row: pd.Series,
     period_page_id: str,
@@ -272,7 +160,7 @@ def process_code_page(
     """
     if code in page_code_map:
         for page_id in ensure_page_ids_is_list(page_code_map[code]):
-            log_and_update_page(page_id, code, row, notion_factory)
+            log_and_update_page(page_id, row, notion_factory)
             if page_id in page_code_map[code]:
                 if isinstance(page_code_map[code], list):
                     page_code_map[code].remove(page_id)
@@ -311,8 +199,7 @@ def get_filtered_rows(df: pd.DataFrame, column_name: str, code: str) -> pd.DataF
 
 
 def sort_rows_by_priority(
-    filtered_rows: pd.DataFrame,
-    res_priority: list[str] = ["AP", "DU", "DI", "RR"],
+    filtered_rows: pd.DataFrame, res_priority: list[str] = None
 ) -> pd.DataFrame:
     """
     Sorts the filtered rows by 'RES' priority and 'NOTA'.
@@ -324,6 +211,8 @@ def sort_rows_by_priority(
     Returns:
         DataFrame: Sorted rows based on 'RES' priority and 'NOTA'.
     """
+    if not res_priority:
+        res_priority = ["AP", "DU", "DI", "RR"]
     res_priority_map = {res: idx for idx, res in enumerate(res_priority)}
     filtered_rows["RES_PRIORITY"] = filtered_rows["RES"].map(res_priority_map)
     return filtered_rows.sort_values(
@@ -362,7 +251,7 @@ def update_pages_with_rows(
     for idx, page_id in enumerate(page_ids):
         if idx < len(sorted_rows):
             row = sorted_rows.iloc[idx]
-            log_and_update_page(page_id, code, row, notion_factory)
+            log_and_update_page(page_id, row, notion_factory)
         else:
             general_log.logger.warning(
                 f"No more data available to update for code {code} (page_id: {page_id}). Skipping."
@@ -370,28 +259,49 @@ def update_pages_with_rows(
 
 
 def log_and_update_page(
-    page_id: str, code: str, row: pd.Series, notion_factory: NotionRequestFactory
+    page_id: str, row: pd.Series, notion_factory: NotionRequestFactory
 ):
     """
     Logs the update and performs the actual update of the Notion page.
 
     Parameters:
         page_id (str): The Notion page ID to update.
-        code (str): The code corresponding to the page and row.
         row (pd.Series): The row of data to update in the Notion page.
         notion_factory (NotionRequestFactory): An instance of the NotionRequestFactory.
     """
     general_log.logger.info(
-        f"Updating Notion page (page_id: {page_id}) with {code} using row with RES='{row['RES']}' and NOTA={row['NOTA']}."
+        f"Updating Notion page (page_id: {page_id}) with {row['CÓDIGO']} using row with RES='{row['RES']}', NOTA={row['NOTA']}, CH={row['CH']}, PERÍODO='{row['PERÍODO']}'."
     )
-    data = {"NOTA": {"number": row["NOTA"]}}
-    response = notion_factory.update_page(page_id, data)
-
-    if response.status_code == 200:
-        general_log.logger.info(
-            f"Successfully updated Notion page with {code} (page_id: {page_id}) with NOTA: {row['NOTA']}."
-        )
+    data = {}
+    if row["RES"] == "--":
+        data["NOTA"] = {"number": -1}
     else:
-        general_log.logger.error(
-            f"Failed to update Notion page with {code} (page_id: {page_id}). Status code: {response.status_code}"
+        fields = {
+            "NOTA": {"key": "number"},
+            "CH": {"key": "number"},
+            "PERÍODO": {
+                "key": "rich_text",
+                "format": lambda x: [{"text": {"content": x}}],
+            },
+        }
+        for field, config in fields.items():
+            value = row[field]
+            if pd.notna(value) and value not in ["", " ", "--", None]:
+                formatted_value = (
+                    config["format"](value) if "format" in config else value
+                )
+                data[field] = {config["key"]: formatted_value}
+    if data:
+        response = notion_factory.update_page(page_id, data)
+        if response.status_code == 200:
+            general_log.logger.info(
+                f"Successfully updated Notion page with {row['CÓDIGO']} (page_id: {page_id}) with data: {data}."
+            )
+        else:
+            general_log.logger.error(
+                f"Failed to update Notion page with {row['CÓDIGO']} (page_id: {page_id}). Status code: {response.status_code}"
+            )
+    else:
+        general_log.logger.info(
+            f"No valid data to update for {row['CÓDIGO']} (page_id: {page_id}). Skipping update."
         )

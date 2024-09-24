@@ -107,9 +107,6 @@ def create_notion_factories() -> dict[str, NotionRequestFactory]:
     return {
         "main": NotionRequestFactory(config, config["notion_login"]["main_db_id"]),
         "rr": NotionRequestFactory(config, config["notion_login"]["rr_db_id"], "rr"),
-        "timeline": NotionRequestFactory(
-            config, config["notion_login"]["timeline_db_id"], "timeline"
-        ),
     }
 
 
@@ -129,7 +126,6 @@ def generate_page_code_maps(
     return {
         "main": get_page_id_from_code(df, notion_factories["main"]),
         "rr": get_page_id_from_code(df, notion_factories["rr"]),
-        "timeline": get_page_id_from_code(df, notion_factories["timeline"]),
     }
 
 

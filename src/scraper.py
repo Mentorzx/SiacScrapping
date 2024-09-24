@@ -113,6 +113,7 @@ class Scraper:
 
         df["PERÍODO"] = df["PERÍODO"].replace("", None)
         df["PERÍODO"] = df["PERÍODO"].ffill()
+        df["CÓDIGO"] = df["CÓDIGO"].replace([" ", ""], None)
         self._clean_and_convert_column_to_numeric(df, "NOTA")
         self._clean_and_convert_column_to_numeric(df, "CH")
         return_log.logger.info(f"DataFrame created with shape: {df.shape}")

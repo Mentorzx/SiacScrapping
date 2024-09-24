@@ -131,9 +131,7 @@ class MainWindow(GenericWindow):
         token, main_db_id = notion_info.get("token", ""), notion_info.get(
             "main_db_id", ""
         )
-        timeline_db_id, rr_db_id = notion_info.get(
-            "timeline_db_id", ""
-        ), notion_info.get("rr_db_id", "")
+        rr_db_id = notion_info.get("rr_db_id", "")
         if cpf:
             self.entries["CPF"].insert(0, cpf)
             self.remember_login_var.set(1)
@@ -141,11 +139,10 @@ class MainWindow(GenericWindow):
             if password:
                 self.entries["Password"].insert(0, password)
                 self.remember_password_var.set(1)
-        if all((token, main_db_id, timeline_db_id, rr_db_id)):
+        if all((token, main_db_id, rr_db_id)):
             for field, value in {
                 "Notion Token": token,
                 "Main Database ID": main_db_id,
-                "Timeline Database ID": timeline_db_id,
                 "Rejection Database ID": rr_db_id,
             }.items():
                 self.entries[field].insert(0, value)
@@ -206,6 +203,9 @@ class MainWindow(GenericWindow):
             cpf (str): CPF of the user.
             password (str): Password of the user.
         """
+        login = self.entries["CPF"].get()
+        password = self.entries["Password"].get()
+        self._update_config(login, password)        
         service = Service(ChromeDriverManager().install())
         options = self._configure_browser_options()
         self.driver = webdriver.Chrome(service=service, options=options)
@@ -289,7 +289,6 @@ class MainWindow(GenericWindow):
         config["notion_login"] = {
             "token": self.entries["Notion Token"].get(),
             "main_db_id": self.entries["Main Database ID"].get(),
-            "timeline_db_id": self.entries["Timeline Database ID"].get(),
             "rr_db_id": self.entries["Rejection Database ID"].get(),
         }
         return config
