@@ -1,4 +1,4 @@
-title: Siac Scrapping Sync - v1.0.0-beta.4
+title: Siac Scrapping Sync - v1.0.0
 base_url: https://alunoweb.ufba.br/SiacWWW/
 completed_courses_url: https://alunoweb.ufba.br/SiacWWW/ConsultarCoeficienteRendimento.do
 log:
@@ -13,7 +13,6 @@ notion:
     - Main Database ID
     - Rejection Database ID
     url: https://api.notion.com/v1
-    window_title: Notion - Auth - v1.0.0-beta.2
 notion_login:
     token: ''
     main_db_id: ''
