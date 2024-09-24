@@ -33,19 +33,26 @@ def get_config_path() -> str:
 
 def write_to_yaml(file_path, data) -> bool:
     """
-    Write data to a YAML file.
+    Write data to a YAML file in an organized and readable format.
 
     Parameters:
     file_path (str): The path to the YAML file.
     data (dict): The data to be written to the file.
-    
+
     Returns:
-    bool: The sucess.
+    bool: The success.
     """
     try:
         with open(file_path, "w") as config_file:
-            yaml.dump(data, config_file, default_flow_style=False)
+            yaml.dump(
+                data,
+                config_file,
+                default_flow_style=False,
+                sort_keys=False,
+                indent=4,
+                width=80,
+            )
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Failed to write config: {e}")
         return False
-    
