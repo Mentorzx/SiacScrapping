@@ -52,7 +52,9 @@ def execute_scraping(scraper: Scraper):
     try:
         df = scraper.scrape_table()
         if not df.empty:
-            return_log.logger.info(f"DataFrame obtained from scraping: {df.head()}")
+            return_log.logger.info(
+                f"DataFrame obtained from scraping: {df.to_string()}"
+            )
             return df
         else:
             general_log.logger.warning("DataFrame is empty after scraping.")
@@ -155,7 +157,13 @@ def run_main_logic(scraper):
     This function is executed in a separate thread.
     """
     try:
-
+        notion_factories = create_notion_factories()
+        for type, factory in notion_factories.items():
+            token = factory.notion_adapter.token
+            db_id = factory.database_id
+            return_log.logger.info(
+                f"Notion Factory updated: Type='{type}', Token='{token}', DB ID='{db_id}'"
+            )
         data_frame = execute_scraping(scraper)
         if data_frame.empty:
             general_log.logger.warning("No data was scraped. Exiting the application.")
@@ -165,11 +173,9 @@ def run_main_logic(scraper):
         update_all_notion_tables(data_frame, page_code_maps, notion_factories)
 
         general_log.logger.info(
-            "Program completed successfully. All tasks were executed and results were processed as expected."
+            "Program completed successfully. All tasks were executed."
         )
-        print(
-            "Program completed successfully. All tasks were executed and results were processed as expected."
-        )
+        print("Program completed successfully. All tasks were executed.")
     except Exception as error:
         general_log.logger.critical(f"Application terminated due to: {error}")
 
@@ -181,6 +187,12 @@ def main():
     """
     global notion_factories
     notion_factories = create_notion_factories()
+    for type, factory in notion_factories.items():
+        token = factory.notion_adapter.token
+        db_id = factory.database_id
+        return_log.logger.info(
+            f"Notion Factory created: Type='{type}', Token='{token}', DB ID='{db_id}'"
+        )
     scraper = initialize_application()
     threading.Thread(target=run_main_logic, args=(scraper,)).start()
     LoadingWindow().run()

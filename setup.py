@@ -27,7 +27,7 @@ def detect_unavailable_modules():
 
 
 available = detect_unavailable_modules()[1]
-print(available)
+print("Available modules: ", available)
 
 build_exe_options = {
     "packages": available,
@@ -37,8 +37,8 @@ build_exe_options = {
 
 setup(
     name="SiacScrappingSync",
-    version="1.1.1",
-    description="TODO",
+    version="1.1.3",
+    description="Scrapping automation for Siac",
     options={"build_exe": build_exe_options},
     executables=[Executable("src/main.py", base="Win32GUI")],
 )

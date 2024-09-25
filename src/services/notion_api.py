@@ -85,15 +85,14 @@ class NotionRequestFactory:
         Returns:
             List[Dict]: The list of pages.
         """
+        get_all = num_pages is None
+        page_size = 100 if get_all else num_pages
         general_log.logger.info(
-            f"Fetching pages from Notion database with num_pages={num_pages}."
+            f"Fetching pages from Notion database with num_pages={page_size}."
         )
         query_url = (
             f"{self.notion_adapter.get_base_url()}/databases/{self.database_id}/query"
         )
-        get_all = num_pages is None
-        page_size = 100 if get_all else num_pages
-
         payload = {"page_size": page_size}
         return_log.logger.info(f"Initial payload for fetching pages: {payload}")
         response = requests.post(

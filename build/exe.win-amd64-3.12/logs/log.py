@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from typing import Literal
 
 from config import config
@@ -24,7 +25,11 @@ class Logger:
         log_type (str): The type of the log, either 'general' or 'return'.
         """
         self.log_type = log_type
-        self.LOG_DIR = os.path.abspath(config["log"]["dir"])
+        if getattr(sys, "frozen", False):
+            self.base_path = os.path.dirname(sys.executable)
+        else:
+            self.base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        self.LOG_DIR = os.path.join(self.base_path, config["log"]["dir"])
         self.LOG_FILE_EXTENSION = config["log"]["log_file_extension"]
         self.GENERAL_LOG_FILE = config["log"]["general_log_file"]
         self.RETURN_LOG_FILE = config["log"]["return_log_file"]

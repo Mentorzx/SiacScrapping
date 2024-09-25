@@ -276,40 +276,45 @@ def log_and_update_page(
         row (pd.Series): The row of data to update in the Notion page.
         notion_factory (NotionRequestFactory): An instance of the NotionRequestFactory.
     """
-
+    row_copy = row.copy()
+    fields = {
+        "NOTA": {"key": "number"},
+        "CH": {"key": "number"},
+        "PERÍODO": {
+            "key": "rich_text",
+            "format": lambda x: [{"text": {"content": x}}],
+        },
+    }
+    if row_copy["RES"] == "--":
+        row_copy["NOTA"] = -1
+        fields.pop("CH")
     general_log.logger.info(
-        f"Updating Notion page (page_id: {page_id}) with {row['CÓDIGO']} using row with RES='{row['RES']}', NOTA={row['NOTA']}, CH={row['CH']}, PERÍODO='{row['PERÍODO']}'."
+        f"Updating Notion page (page_id: {page_id}) with {row_copy['CÓDIGO']} using row with "
+        f"RES='{row_copy['RES']}', NOTA={row_copy['NOTA']}, CH={row_copy['CH'] if 'CH' in row_copy else '--'}, "
+        f"PERÍODO='{row_copy['PERÍODO']}'."
     )
-    data = {}
-    if row["RES"] == "--":
-        data["NOTA"] = {"number": -1}
-    else:
-        fields = {
-            "NOTA": {"key": "number"},
-            "CH": {"key": "number"},
-            "PERÍODO": {
-                "key": "rich_text",
-                "format": lambda x: [{"text": {"content": x}}],
-            },
+    data = {
+        field: {
+            config["key"]: (
+                config["format"](row_copy[field])
+                if "format" in config
+                else row_copy[field]
+            )
         }
-        for field, config in fields.items():
-            value = row[field]
-            if pd.notna(value) and value not in ["", " ", "--", None]:
-                formatted_value = (
-                    config["format"](value) if "format" in config else value
-                )
-                data[field] = {config["key"]: formatted_value}
+        for field, config in fields.items()
+        if pd.notna(row_copy[field]) and row_copy[field] not in ["", " ", "--", None]
+    }
     if data:
         response = notion_factory.update_page(page_id, data)
         if response.status_code == 200:
             general_log.logger.info(
-                f"Successfully updated Notion page with {row['CÓDIGO']} (page_id: {page_id}) with data: {data}."
+                f"Successfully updated Notion page with {row_copy['CÓDIGO']} (page_id: {page_id}) with data: {data}."
             )
         else:
             general_log.logger.error(
-                f"Failed to update Notion page with {row['CÓDIGO']} (page_id: {page_id}). Status code: {response.status_code}"
+                f"Failed to update Notion page with {row_copy['CÓDIGO']} (page_id: {page_id}). Status code: {response.status_code}"
             )
     else:
         general_log.logger.info(
-            f"No valid data to update for {row['CÓDIGO']} (page_id: {page_id}). Skipping update."
+            f"No valid data to update for {row_copy['CÓDIGO']} (page_id: {page_id}). Skipping update."
         )

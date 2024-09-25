@@ -5,9 +5,8 @@ import sys
 import customtkinter as ctk
 from PIL import Image
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from utils.generic_window import GenericWindow
 from config import config
+from utils.generic_window import GenericWindow
 
 
 class LoadingWindow(GenericWindow):
@@ -45,9 +44,12 @@ class LoadingWindow(GenericWindow):
         )
         self.status_label.grid(padx=20, pady=10)
 
-        self.image = Image.open(
-            os.path.join(os.path.dirname(__file__), "icons", "loading1.png")
-        )
+        if getattr(sys, "frozen", False):
+            self.base_path = os.path.dirname(sys.executable)
+        else:
+            self.base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        image_path = os.path.join(self.base_path, "src/icons", "loading1.png")
+        self.image = Image.open(image_path)
         self.ctk_image = ctk.CTkImage(self.image, size=(80, 80))
         self.loading_icon = ctk.CTkLabel(self.window, image=self.ctk_image, text="")
         self.loading_icon.grid(pady=30, sticky="s")
@@ -100,9 +102,7 @@ class LoadingWindow(GenericWindow):
         Returns:
             str: The last log message (without the log level), or an empty string if no logs are found.
         """
-        log_dir = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "logs", "logs"
-        )
+        log_dir = os.path.join(self.base_path, "logs", "logs")
         log_files = [
             f
             for f in os.listdir(log_dir)
@@ -146,28 +146,31 @@ class LoadingWindow(GenericWindow):
                 self.show_info(f"{current_log_message}...")
                 if "Program completed successfully" in current_log_message:
                     self.stop_loading()
+                if "Application terminated" in current_log_message:
+                    self.stop_loading(False)
 
             self.frames[0].after(1, self.check_logs)
 
-    def stop_loading(self) -> None:
+    def stop_loading(self, success: bool = True) -> None:
         """
         Stop the loading animation and update the UI to show that synchronization is complete.
         """
         self.animation_running = False
         self.checking_logs = False
         self.loading_icon.destroy()
-        self.loading_label.configure(text="Synced")
-        self.show_static_icon()
+        self.loading_label.configure(text="Synced" if success else "Failure")
+        self.show_static_icon(success)
 
-    def show_static_icon(self) -> None:
+    def show_static_icon(self, success: bool = True) -> None:
         """
         Show the static icon indicating completion.
         """
         if hasattr(self, "completed_icon"):
             return
-        completed_image = Image.open(
-            os.path.join(os.path.dirname(__file__), "icons", "feito.png")
+        completed_image_path = os.path.join(
+            self.base_path, "src/icons", "done.png" if success else "cancel.png"
         )
+        completed_image = Image.open(completed_image_path)
         self.ctk_completed_image = ctk.CTkImage(completed_image, size=(80, 80))
         self.completed_icon = ctk.CTkLabel(
             self.window, image=self.ctk_completed_image, text=""

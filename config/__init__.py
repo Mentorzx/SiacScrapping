@@ -1,4 +1,5 @@
 import os
+import sys
 
 import yaml
 
@@ -26,7 +27,10 @@ def get_config_path() -> str:
     Returns:
     str: The absolute path to the config.yaml file.
     """
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if getattr(sys, "frozen", False):
+        project_root = os.path.abspath(os.path.dirname(sys.executable))
+    else:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     config_directory = os.path.join(project_root, "config")
     return os.path.join(config_directory, "config.yaml")
 
