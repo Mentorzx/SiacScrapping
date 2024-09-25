@@ -41,7 +41,7 @@ class LoadingWindow(GenericWindow):
             text="Initializing...",
             text_color="#ABDAE1",
             font=("Segoe UI", 12, "bold"),
-            wraplength=300,
+            wraplength=280,
         )
         self.status_label.grid(padx=20, pady=10)
 
