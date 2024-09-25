@@ -1,0 +1,5 @@
+2024-09-25 01:24:30,194 - INFO - Initializing NotionRequestFactory with config and database_id.
+2024-09-25 01:24:30,194 - INFO - Initializing NotionAdapter with provided configuration.
+2024-09-25 01:24:30,194 - INFO - Initializing NotionRequestFactory with config and database_id.
+2024-09-25 01:24:30,194 - INFO - Initializing NotionAdapter with provided configuration.
+2024-09-25 01:24:30,194 - INFO - Starting the SIAC Scraping application.
